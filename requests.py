@@ -38,3 +38,46 @@ class Requests:
             status=200,
             mimetype='application/json'
         )
+
+    def todos_create(self):
+        errors = []
+        if not request.form.get('title'):
+            errors.append('Titled is required')
+        if not request.form.get('text'):
+            errors.append('Text description is required')
+        if not request.form.get('done'):
+            errors.append("Done field is required")
+
+        if errors:
+            return Response(
+                json_util.dumps(errors),
+                status=422,
+                mimetype='application/json'
+            )
+
+        else:
+            done = True
+            if str(request.form.get('done').lower()) == 'false':
+                done = False
+            if str(request.form.get('done')) == '0':
+                done = False
+            now = datetime.datetime.utcnow()
+            todo_id = self.db.todos.insert_one({
+                "title": request.form.get('title'),
+                "text": request.form.get('text'),
+                "done": done,
+                "createdAt": now,
+                "updatedAt": now
+            }).inserted_id
+            return Response(
+                json_util.dumps({
+                    "title": request.form.get('title'),
+                    "text": request.form.get('text'),
+                    "done": done,
+                    "_id": str(todo_id),
+                    "createdAt": str(now),
+                    "updatedAt": str(now)
+                }),
+                status=200,
+                mimetype='application/json'
+            )
